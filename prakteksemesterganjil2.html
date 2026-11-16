@@ -1,0 +1,521 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TKJ Quiz Arena</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#183247}
+header{background:linear-gradient(130deg,#102a43,#176b9b);color:white;padding:35px 20px}
+.container{max-width:1000px;margin:auto}
+h1{font-size:36px;margin:15px 0}
+header p{color:#dcecf6;line-height:1.6}
+main{max-width:1000px;margin:-15px auto 40px;padding:0 15px}
+.panel{background:white;padding:25px;border-radius:18px;box-shadow:0 8px 25px #0001}
+.hidden{display:none!important}
+h2{margin-top:0}
+input{padding:13px;border:1px solid #ccd8e0;border-radius:10px;width:100%;font-size:15px;margin:10px 0}
+button{cursor:pointer;font-size:15px;border:0;border-radius:10px;padding:12px 17px;font-weight:bold}
+.primary{background:#176b9b;color:white}
+.secondary{background:#e7eef5;color:#102a43}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px}
+.topic{background:white;border:1px solid #dce5eb;text-align:left;padding:18px;border-radius:14px;color:#183247}
+.topic:hover{border-color:#36b6c9;transform:translateY(-2px)}
+.topic strong{display:block;font-size:17px;margin:9px 0}
+.topic small{color:#64798b}
+.pill{display:inline-block;background:#e8f4fa;color:#176b9b;padding:7px 12px;border-radius:20px;font-size:13px;font-weight:bold}
+.progress{height:9px;background:#e7eef3;border-radius:20px;margin:20px 0;overflow:hidden}
+.progress div{height:100%;background:#36b6c9;width:0}
+.question{font-size:22px;font-weight:bold;line-height:1.5;margin:20px 0}
+.answers{display:grid;gap:12px}
+.answer{width:100%;text-align:left;background:white;border:1px solid #ccd8e0;color:#183247}
+.answer:hover{border-color:#176b9b}
+.answer.correct{background:#e8f8ef;border:2px solid #16865b}
+.answer.wrong{background:#fff0f0;border:2px solid #c74747}
+.answer:disabled{cursor:default;opacity:1}
+.feedback{padding:15px;background:#eef6fa;margin-top:15px;border-radius:10px;line-height:1.5}
+.actions{display:flex;justify-content:space-between;gap:10px;margin-top:25px}
+.score{text-align:center;font-size:65px;color:#176b9b;font-weight:bold;margin:20px}
+.result{text-align:center}
+.review details{border:1px solid #ddd;padding:13px;border-radius:10px;margin:10px 0}
+.review summary{cursor:pointer;font-weight:bold}
+footer{text-align:center;color:#64798b;padding:20px;font-size:13px}
+@media(max-width:550px){h1{font-size:29px}.panel{padding:17px}.question{font-size:19px}.actions button{flex:1}}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="container">
+<div><b>TKJ • LEARNING ARENA</b></div>
+<h1>Uji Pengetahuan<br>TKJ Kamu!</h1>
+<p>Belajar, berlatih, dan tingkatkan pengetahuan Teknik Komputer dan Jaringan melalui kuis interaktif.</p>
+</div>
+</header>
+
+<main>
+
+<section id="home" class="panel">
+<h2>Selamat Datang!</h2>
+<p>Masukkan nama dan pilih materi yang ingin dikerjakan.</p>
+<input id="playerName" placeholder="Masukkan nama pemain">
+<button class="primary" onclick="saveName()">Simpan Nama</button>
+<p id="greeting"></p>
+<div class="grid" id="topics"></div>
+</section>
+
+<section id="quiz" class="panel hidden">
+<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+<span class="pill" id="topicLabel"></span>
+<span id="counter"></span>
+</div>
+<div class="progress"><div id="progressBar"></div></div>
+<div class="question" id="questionText"></div>
+<div class="answers" id="answerList"></div>
+<div id="feedback" class="feedback hidden"></div>
+<div class="actions">
+<button class="secondary" onclick="goHome()">Keluar</button>
+<button class="primary" id="nextBtn" onclick="nextQuestion()" disabled>Soal Berikutnya</button>
+</div>
+</section>
+
+<section id="result" class="panel hidden">
+<div class="result">
+<span class="pill">HASIL KUIS</span>
+<h2 id="resultTitle"></h2>
+<div class="score" id="scoreText"></div>
+<p id="resultMessage"></p>
+<h3 id="percentText"></h3>
+<button class="primary" onclick="retryQuiz()">Ulangi Kuis</button>
+<button class="secondary" onclick="goHome()">Materi Lain</button>
+</div>
+<hr style="margin:25px 0">
+<div class="review">
+<h3>Pembahasan Jawaban</h3>
+<div id="reviewList"></div>
+</div>
+</section>
+
+</main>
+
+<footer>TKJ Quiz Arena • Media Pembelajaran Teknik Komputer dan Jaringan</footer>
+
+<script>
+
+// =====================================
+// DATA 10 MATERI DAN 150 SOAL
+// =====================================
+
+const bank = [
+
+{
+title:"Dasar-Dasar Komputer",
+desc:"Pengenalan komputer dan komponennya",
+q:[
+["Apa kepanjangan CPU?",["Central Processing Unit","Computer Personal Unit","Central Program Utility","Control Processing User"],0],
+["Perangkat komputer yang dapat disentuh disebut?",["Software","Hardware","Brainware","Program"],1],
+["Orang yang menggunakan komputer disebut?",["Hardware","Software","Brainware","Firmware"],2],
+["Data yang telah diolah disebut?",["Informasi","Perintah","Program","Folder"],0],
+["Pusat pemrosesan komputer adalah?",["Monitor","CPU","Keyboard","Mouse"],1],
+["Perangkat untuk memasukkan huruf adalah?",["Speaker","Printer","Keyboard","Monitor"],2],
+["Perangkat untuk menampilkan gambar adalah?",["Mouse","Monitor","Scanner","Mikrofon"],1],
+["Satuan data terkecil adalah?",["Byte","Bit","Kilobyte","Megabyte"],1],
+["Delapan bit sama dengan?",["1 Byte","1 KB","1 MB","1 GB"],0],
+["Penyimpanan sementara komputer adalah?",["RAM","ROM","DVD","Flashdisk"],0],
+["Komputer bekerja berdasarkan?",["Instruksi","Warna layar","Ukuran meja","Suara"],0],
+["Contoh perangkat output adalah?",["Mouse","Keyboard","Printer","Scanner"],2],
+["Komputer menggunakan sistem bilangan?",["Desimal","Biner","Romawi","Latin"],1],
+["Perangkat penggerak pointer adalah?",["Mouse","Speaker","Printer","Proyektor"],0],
+["Urutan kerja komputer adalah?",["Input-Proses-Output","Output-Input-Proses","Proses-Input-Hapus","Output-Proses-Input"],0]
+]
+},
+
+{
+title:"Hardware dan Software",
+desc:"Perangkat keras dan perangkat lunak",
+q:[
+["Contoh sistem operasi adalah?",["Windows","Keyboard","Monitor","RAM"],0],
+["Microsoft Word termasuk?",["Hardware","Software aplikasi","Jaringan","Penyimpanan"],1],
+["Papan utama komputer disebut?",["Motherboard","Mousepad","Speaker","Flashdisk"],0],
+["SSD berfungsi untuk?",["Mencetak","Menyimpan data","Menampilkan gambar","Memasukkan suara"],1],
+["PSU berfungsi untuk?",["Menyediakan daya","Mengolah grafis","Menyimpan data","Mengatur internet"],0],
+["GPU berfungsi untuk?",["Mengolah grafis","Mengatur suara","Menyimpan teks","Membagi IP"],0],
+["Contoh pengolah angka adalah?",["Excel","Paint","Notepad","VLC"],0],
+["BIOS/UEFI membantu proses?",["Awal komputer menyala","Mencetak","Mengirim email","Mengedit foto"],0],
+["Pembaca barcode disebut?",["Barcode Scanner","Plotter","Speaker","Webcam"],0],
+["Contoh penyimpanan eksternal?",["Flashdisk","CPU","RAM","Cache"],0],
+["Driver berfungsi untuk?",["Menghubungkan OS dengan hardware","Mengganti kabel","Mendinginkan CPU","Membuat website"],0],
+["Open source berarti?",["Kode sumber dapat dipelajari sesuai lisensi","Selalu berbayar","Tidak boleh dipelajari","Tidak bisa diubah"],0],
+["Perangkat input suara adalah?",["Mikrofon","Monitor","Printer","Proyektor"],0],
+["Heatsink berfungsi untuk?",["Membuang panas","Menambah SSD","Menguatkan Wi-Fi","Mencetak"],0],
+["Antivirus termasuk software?",["Keamanan","Pengolah kata","Presentasi","Desain"],0]
+]
+},
+
+{
+title:"Sistem Operasi",
+desc:"Fungsi OS, file dan folder",
+q:[
+["Fungsi sistem operasi adalah?",["Mengelola hardware dan software","Mengganti monitor","Mencetak tanpa printer","Membuat listrik"],0],
+["Contoh sistem operasi adalah?",["Linux","Word","Chrome","Photoshop"],0],
+["Proses awal menyalakan komputer disebut?",["Booting","Browsing","Rendering","Formatting"],0],
+["Folder digunakan untuk?",["Mengelompokkan file","Mempercepat kipas","Mengganti RAM","Menghubungkan LAN"],0],
+["Ekstensi dokumen Word adalah?",[".docx",".mp3",".png",".exe"],0],
+["Perintah menyalin file adalah?",["Copy","Delete","Rename","Shutdown"],0],
+["Mengubah nama file disebut?",["Rename","Refresh","Paste","Print"],0],
+["Antarmuka perintah teks disebut?",["CLI","GUI","GPU","USB"],0],
+["Antarmuka grafis disebut?",["GUI","CLI","CPU","BIOS"],0],
+["Shortcut untuk paste adalah?",["Ctrl+V","Ctrl+C","Ctrl+X","Ctrl+Z"],0],
+["Tempat penampungan file yang dihapus sementara adalah?",["Recycle Bin","Taskbar","Control Panel","Desktop"],0],
+["Administrator memiliki?",["Hak pengelolaan lebih luas","Akses melihat jam saja","Tidak bisa memasang aplikasi","Tidak bisa mengubah pengaturan"],0],
+["Update OS berguna untuk?",["Memperbaiki bug dan keamanan","Menghapus hardware","Mematikan internet","Mengurangi fungsi keyboard"],0],
+["Perintah mematikan komputer adalah?",["Shut down","Refresh","Copy","Search"],0],
+["File JPG biasanya berupa?",["Gambar","Audio","Program","Spreadsheet"],0]
+]
+},
+
+{
+title:"Jaringan Komputer Dasar",
+desc:"LAN, WAN, topologi dan protokol",
+q:[
+["Jaringan komputer adalah?",["Perangkat saling terhubung","Komputer tanpa hubungan","Aplikasi pengolah kata","Alat cetak"],0],
+["LAN merupakan singkatan?",["Local Area Network","Large Access Node","Long Area Number","Linked Analog"],0],
+["Jaringan wilayah sangat luas disebut?",["WAN","PAN","LAN","CAN"],0],
+["Topologi dengan perangkat pusat adalah?",["Star","Bus","Ring","Mesh"],0],
+["Penghubung beberapa komputer dalam LAN?",["Switch","Printer","Scanner","Speaker"],0],
+["Internet termasuk jaringan?",["Global","Satu komputer","Tanpa protokol","Offline"],0],
+["Aturan komunikasi jaringan disebut?",["Protokol","Wallpaper","Folder","Resolusi"],0],
+["WLAN adalah?",["Wireless Local Area Network","Wide Link Access Node","Wired LAN","Web Local Number"],0],
+["Topologi ring berbentuk?",["Lingkaran","Pusat dan cabang","Garis lurus","Tidak beraturan"],0],
+["Manfaat jaringan komputer?",["Berbagi file dan printer","Menghilangkan listrik","Memperbesar monitor","Mengganti CPU"],0],
+["PAN digunakan untuk?",["Perangkat pribadi jarak dekat","Antarkota","Antarbenua","Seluruh internet"],0],
+["Penyedia akses Wi-Fi disebut?",["Access Point","Plotter","Heatsink","RAM"],0],
+["Kabel umum Ethernet adalah?",["UTP","HDMI","VGA","Audio"],0],
+["Dalam client-server, server bertugas?",["Menyediakan layanan","Menerima listrik","Menampilkan gambar","Menggantikan klien"],0],
+["Peer-to-peer memungkinkan komputer?",["Berbagi langsung","Harus memakai server khusus","Tidak bisa bertukar file","Hanya satelit"],0]
+]
+},
+
+{
+title:"IP Address dan Subnetting",
+desc:"IPv4, DNS, gateway dan subnet mask",
+q:[
+["IP address digunakan untuk?",["Identitas perangkat jaringan","Kecerahan layar","Menyimpan dokumen","Suhu CPU"],0],
+["IPv4 memiliki panjang?",["32 bit","16 bit","64 bit","128 bit"],0],
+["Alamat IPv4 yang benar?",["192.168.1.10","192.168.1.999","300.1.1.1","192.168.1"],0],
+["192.168.1.1 termasuk IP?",["Private","Multicast","Loopback","Broadcast"],0],
+["Subnet mask berfungsi?",["Memisahkan network dan host","Mengganti nama komputer","Mengenkripsi file","Mengatur resolusi"],0],
+["Default gateway adalah?",["Jalur ke jaringan lain","Alamat printer saja","Nama domain","Nomor RAM"],0],
+["DNS menerjemahkan?",["Nama domain menjadi IP","IP menjadi layar","File menjadi folder","Sinyal menjadi listrik"],0],
+["127.0.0.1 disebut?",["Loopback","Broadcast","Gateway","MAC"],0],
+["Prefix /24 setara dengan?",["255.255.255.0","255.0.0.0","255.255.0.0","255.255.255.255"],0],
+["IP otomatis diberikan oleh?",["DHCP","HTML","FTP","HDMI"],0],
+["Perintah melihat IP Windows?",["ipconfig","mkdir","paint","format"],0],
+["Ping digunakan untuk?",["Menguji konektivitas","Menghapus IP","Mengubah kabel","Membuat akun"],0],
+["MAC address bekerja pada lapisan?",["Data Link","Application","Presentation","Session"],0],
+["IP yang sama dapat menyebabkan?",["Konflik IP","CPU meningkat","Monitor mati","DNS menjadi DHCP"],0],
+["Contoh IP privat adalah?",["10.0.0.5","8.8.8.8","1.1.1.1","203.0.113.8"],0]
+]
+},
+
+{
+title:"Perangkat Jaringan",
+desc:"Router, switch, hub, modem dan AP",
+q:[
+["Penerus paket antarjaringan adalah?",["Router","Hub","Repeater","Patch panel"],0],
+["Switch meneruskan frame berdasarkan?",["MAC Address","Nama pengguna","Ukuran file","Warna kabel"],0],
+["Hub mengirim data ke?",["Semua port","Router saja","Printer saja","DNS"],0],
+["Modem melakukan?",["Modulasi dan demodulasi","Mencetak","Menyimpan OS","Mengatur suhu"],0],
+["Repeater digunakan untuk?",["Memperluas sinyal","Mengatur akun","Mencetak","Membuat MAC"],0],
+["Access Point berfungsi?",["Menghubungkan klien Wi-Fi","Mengubah RAM","Mencetak IP","Menghapus virus"],0],
+["NIC merupakan singkatan?",["Network Interface Card","Network Internet Cable","New Internal Computer","Node Input Control"],0],
+["Perangkat penghubung jaringan berbeda?",["Router","Splitter","Keyboard","Scanner"],0],
+["Patch panel digunakan untuk?",["Mengatur terminasi kabel","Memperkuat CPU","Menyimpan video","Membagikan IP"],0],
+["PoE berarti?",["Daya melalui Ethernet","Gambar lewat HDMI","Penyimpanan IP","Pendingin switch"],0],
+["Firewall berfungsi?",["Menyaring lalu lintas jaringan","Memperbesar RAM","Mencetak","Menyimpan foto"],0],
+["Antena Wi-Fi berfungsi?",["Memancarkan dan menerima gelombang radio","Mengubah PDF","Mengukur listrik","Menyimpan BIOS"],0],
+["Banyak port Ethernet tersedia pada?",["Switch","Mikrofon","Proyektor","UPS"],0],
+["UPS digunakan untuk?",["Daya cadangan","DNS","Wi-Fi","Mengganti router"],0],
+["Modem/ONT menghubungkan pelanggan dengan?",["Jaringan penyedia layanan","Keyboard","RAM","Printer"],0]
+]
+},
+
+{
+title:"Kabel Jaringan dan Crimping",
+desc:"UTP, RJ45 dan LAN tester",
+q:[
+["UTP adalah singkatan?",["Unshielded Twisted Pair","Universal Transfer Port","United Twisted Protocol","Unshielded Terminal Pair"],0],
+["Konektor kabel Ethernet adalah?",["RJ45","RJ11","USB-C","HDMI"],0],
+["Alat memasang RJ45?",["Crimping tool","Obeng","Solder","Tang biasa"],0],
+["Alat menguji kabel LAN?",["LAN tester","Scanner","Access point","Speaker"],0],
+["Kabel straight memiliki susunan?",["Sama pada kedua ujung","Berbeda","Tanpa konektor","Satu kawat"],0],
+["Crossover tradisional menggunakan?",["T568A dan T568B","T568A saja","T568B saja","Tanpa standar"],0],
+["Jumlah pin konektor Ethernet?",["8","4","6","12"],0],
+["Warna pertama T568B?",["Putih-oranye","Putih-hijau","Biru","Cokelat"],0],
+["Kabel dipilin untuk mengurangi?",["Gangguan dan crosstalk","Penyimpanan","Ukuran konektor","RAM"],0],
+["Sebelum crimping jaket kabel harus?",["Dikupas secukupnya","Dibakar","Direndam","Dihilangkan seluruhnya"],0],
+["LAN tester tidak sesuai urutan berarti?",["Kemungkinan ada kesalahan kabel","Pasti sempurna","IP terlalu besar","Monitor rusak"],0],
+["T568A dan T568B mengatur?",["Urutan warna pin","Alamat IP","Kecepatan CPU","Nama Wi-Fi"],0],
+["Cat5e umum mendukung?",["Gigabit Ethernet","Satelit langsung","Listrik rumah","VGA"],0],
+["Patch cord digunakan untuk?",["Menghubungkan perangkat jaringan","Mengisi tinta","Menghubungkan VGA","Mengganti kipas"],0],
+["Setelah crimping sebaiknya?",["Uji dengan LAN tester","Langsung dipotong","Cabut pin","Hapus router"],0]
+]
+},
+
+{
+title:"MikroTik dan Router",
+desc:"RouterOS, WinBox, DHCP dan NAT",
+q:[
+["MikroTik RouterOS adalah?",["Sistem operasi router","Pengolah kata","Kabel UTP","OS printer"],0],
+["Aplikasi konfigurasi MikroTik?",["WinBox","Paint","Excel","Notepad"],0],
+["DHCP Server berfungsi?",["Membagikan IP otomatis","Mencetak IP","Menyimpan video","Memblokir kabel"],0],
+["NAT digunakan untuk?",["Menerjemahkan alamat jaringan","Mengatur layar","Format flashdisk","Membuat email"],0],
+["Masquerade umumnya digunakan untuk?",["NAT sumber","Mengganti nama PC","Membuat folder","Mengatur layar"],0],
+["IP > Addresses digunakan untuk?",["Menambahkan alamat IP interface","Wallpaper","Printer","Suhu CPU"],0],
+["IP > DHCP Server digunakan untuk?",["Mengatur DHCP","Akun WinBox","Kabel crossover","Nama SSID"],0],
+["Default route menentukan?",["Jalur menuju jaringan lain","Warna kabel","MAC printer","Firewall"],0],
+["Firewall filter berfungsi?",["Mengizinkan atau menolak trafik","Memperbesar monitor","Mengganti konektor","Membuat dokumen"],0],
+["SSID adalah?",["Nama Wi-Fi","Password admin","MAC router","Jenis kabel"],0],
+["Keamanan Wi-Fi sebaiknya menggunakan?",["WPA2/WPA3","Tanpa password","12345678","Nama SSID"],0],
+["Interface MikroTik adalah?",["Antarmuka jaringan","Folder","Antivirus","Layar"],0],
+["Ping pada MikroTik untuk?",["Menguji konektivitas","Menghapus konfigurasi","Mengubah SSID","Mengukur hard disk"],0],
+["Backup konfigurasi berguna untuk?",["Pemulihan pengaturan","Monitor","Port fisik","Fiber"],0],
+["Sebelum mengubah konfigurasi penting?",["Backup terlebih dahulu","Hapus aturan","Cabut kabel","Bagikan password"],0]
+]
+},
+
+{
+title:"Keamanan Jaringan",
+desc:"Password, firewall dan perlindungan data",
+q:[
+["Tujuan keamanan jaringan?",["Melindungi data dan layanan","Membuat komputer panas","Menghapus pengguna","Mematikan komunikasi"],0],
+["Password aman sebaiknya?",["Panjang dan unik","Nama sendiri","123456","Sama semua"],0],
+["Phishing adalah?",["Penipuan untuk mencuri informasi","Memperbaiki kabel","Update driver","Backup"],0],
+["Firewall berfungsi?",["Menyaring trafik","Meningkatkan RAM","Mencetak laporan","Menyimpan foto"],0],
+["Malware adalah?",["Software berbahaya","Hardware","Kabel fiber","Pendingin"],0],
+["Ransomware adalah malware yang?",["Mengenkripsi data dan meminta tebusan","Mempercepat komputer","Membuat dokumen","Mengatur printer"],0],
+["Update sistem berguna?",["Menutup celah keamanan","Menghapus file","Membagikan password","Mematikan firewall"],0],
+["Autentikasi dua faktor menambahkan?",["Lapisan verifikasi","IP kedua","Dua akun admin","Dua kabel"],0],
+["Tautan mencurigakan sebaiknya?",["Jangan langsung dibuka","Masukkan password","Teruskan","Unduh semua"],0],
+["Backup data berguna?",["Memulihkan data","Menghilangkan router","Mengganti antivirus","Mempercepat Wi-Fi"],0],
+["Least privilege berarti?",["Hak minimum sesuai tugas","Semua admin","Tanpa password","Semua file terbuka"],0],
+["Enkripsi bertujuan?",["Melindungi kerahasiaan data","Menghapus IP","Mempercepat kipas","Mengganti kabel"],0],
+["IDS adalah singkatan?",["Intrusion Detection System","Internet Data Storage","Internal Device Setup","Input Digital Service"],0],
+["Wi-Fi publik sebaiknya?",["Hindari transaksi sensitif","Bagikan password","Matikan keamanan","Gunakan password sama"],0],
+["Login tidak dikenal sebaiknya?",["Amankan akun dan laporkan","Abaikan","Bagikan OTP","Matikan monitor"],0]
+]
+},
+
+{
+title:"Troubleshooting Jaringan",
+desc:"Pemeriksaan dan penanganan gangguan",
+q:[
+["Langkah awal jaringan bermasalah?",["Periksa kabel dan Wi-Fi","Ganti motherboard","Hapus file","Ganti monitor"],0],
+["Lampu link switch mati, periksa?",["Kabel dan konektor","Wallpaper","Ukuran file","Keyboard"],0],
+["Ping 127.0.0.1 memeriksa?",["TCP/IP lokal","ISP","Printer","Antena"],0],
+["Ping IP berhasil tetapi domain gagal, kemungkinan?",["DNS","Monitor","Keyboard","RAM"],0],
+["IP 169.254.x.x biasanya berarti?",["Gagal memperoleh IP DHCP","IP publik","DNS normal","Kabel terlalu panjang"],0],
+["Internet lambat semua pengguna, periksa?",["Router dan ISP","Mouse","Dokumen","Resolusi"],0],
+["Hanya satu komputer tidak terkoneksi?",["Periksa komputer tersebut","Reset semua perangkat","Matikan server","Ganti semua switch"],0],
+["ipconfig /all menampilkan?",["Detail konfigurasi jaringan","Aplikasi desain","Riwayat cetak","Suhu"],0],
+["Dua komputer IP sama menyebabkan?",["Konflik IP","CPU meningkat","Monitor mati","DNS berubah"],0],
+["Traceroute digunakan untuk?",["Melihat jalur menuju tujuan","Menghapus virus","Tes keyboard","Ukur RAM"],0],
+["Wi-Fi lemah di sudut ruangan, solusi?",["Atur posisi AP","Ganti monitor","Hapus DHCP","Pasang printer"],0],
+["Sebelum reset router?",["Catat konfigurasi dan minta izin","Tekan berulang kali","Hapus backup","Bagikan password"],0],
+["Satu aplikasi gagal mengakses jaringan, periksa?",["Pengaturan aplikasi dan firewall","Kabel listrik","Hapus OS","Ganti switch"],0],
+["Gangguan koneksi dicatat berdasarkan?",["Waktu dan perangkat terdampak","Warna casing","Merek meja","Wallpaper"],0],
+["Setelah perbaikan jaringan?",["Uji kembali koneksi","Langsung pergi","Hapus catatan","Ubah semua password"],0]
+]
+}
+
+];
+
+// =====================================
+// SISTEM APLIKASI
+// =====================================
+
+let player="Pemain";
+let topicIndex=0;
+let questionIndex=0;
+let answers=[];
+let locked=false;
+
+function showPage(id){
+["home","quiz","result"].forEach(x=>{
+document.getElementById(x).classList.toggle("hidden",x!==id);
+});
+}
+
+function saveName(){
+player=document.getElementById("playerName").value.trim()||"Pemain";
+document.getElementById("greeting").textContent="Selamat belajar, "+player+"! Pilih materi kuis di bawah.";
+}
+
+function renderTopics(){
+const box=document.getElementById("topics");
+
+box.innerHTML=bank.map((t,i)=>`
+<button class="topic" onclick="startQuiz(${i})">
+<span class="pill">MATERI ${i+1}</span>
+<strong>${t.title}</strong>
+<small>${t.desc}</small>
+<p style="color:#176b9b;font-weight:bold">15 Soal →</p>
+</button>
+`).join("");
+}
+
+function startQuiz(i){
+player=document.getElementById("playerName").value.trim()||player;
+topicIndex=i;
+questionIndex=0;
+answers=[];
+locked=false;
+
+document.getElementById("topicLabel").textContent=bank[i].title;
+showPage("quiz");
+renderQuestion();
+}
+
+function renderQuestion(){
+const q=bank[topicIndex].q[questionIndex];
+
+locked=false;
+
+document.getElementById("counter").textContent=
+"Soal "+(questionIndex+1)+" dari 15";
+
+document.getElementById("progressBar").style.width=
+(questionIndex/15*100)+"%";
+
+document.getElementById("questionText").textContent=q[0];
+
+document.getElementById("feedback").classList.add("hidden");
+
+const box=document.getElementById("answerList");
+
+box.innerHTML=q[1].map((a,i)=>`
+<button class="answer" onclick="chooseAnswer(${i})">
+<b>${"ABCD"[i]}.</b> ${a}
+</button>
+`).join("");
+
+const next=document.getElementById("nextBtn");
+next.disabled=true;
+next.textContent="Pilih jawaban";
+}
+
+function chooseAnswer(choice){
+if(locked)return;
+
+locked=true;
+
+const q=bank[topicIndex].q[questionIndex];
+const correct=q[2];
+
+answers[questionIndex]=choice;
+
+document.querySelectorAll(".answer").forEach((btn,i)=>{
+btn.disabled=true;
+
+if(i===correct){
+btn.classList.add("correct");
+}
+else if(i===choice){
+btn.classList.add("wrong");
+}
+});
+
+const feedback=document.getElementById("feedback");
+
+feedback.textContent=
+(choice===correct?"Benar! ":"Belum tepat. ")+
+"Jawaban yang benar: "+q[1][correct];
+
+feedback.classList.remove("hidden");
+
+const next=document.getElementById("nextBtn");
+next.disabled=false;
+
+next.textContent=
+questionIndex===14?"Lihat Hasil":"Soal Berikutnya";
+}
+
+function nextQuestion(){
+if(!locked)return;
+
+if(questionIndex<14){
+questionIndex++;
+renderQuestion();
+}else{
+finishQuiz();
+}
+}
+
+function finishQuiz(){
+
+const topic=bank[topicIndex];
+
+let score=0;
+
+answers.forEach((a,i)=>{
+if(a===topic.q[i][2])score++;
+});
+
+const percent=Math.round(score/15*100);
+
+document.getElementById("resultTitle").textContent=
+"Hebat, "+player+"!";
+
+document.getElementById("scoreText").textContent=
+score+"/15";
+
+document.getElementById("percentText").textContent=
+percent+"% Jawaban Benar";
+
+let message="";
+
+if(percent>=90){
+message="Luar biasa! Pemahamanmu sangat baik.";
+}else if(percent>=70){
+message="Bagus! Terus tingkatkan kemampuanmu.";
+}else if(percent>=50){
+message="Kamu sudah memiliki dasar. Terus berlatih!";
+}else{
+message="Jangan menyerah! Pelajari pembahasan dan coba lagi.";
+}
+
+document.getElementById("resultMessage").textContent=message;
+
+const review=document.getElementById("reviewList");
+
+review.innerHTML=topic.q.map((q,i)=>`
+<details>
+<summary>
+${answers[i]===q[2]?"✓ Benar":"✗ Salah"} - Soal ${i+1}
+</summary>
+<p>${q[0]}</p>
+<p><b>Jawaban kamu:</b> ${q[1][answers[i]]}</p>
+<p><b>Jawaban benar:</b> ${q[1][q[2]]}</p>
+</details>
+`).join("");
+
+showPage("result");
+}
+
+function retryQuiz(){
+startQuiz(topicIndex);
+}
+
+function goHome(){
+showPage("home");
+}
+
+renderTopics();
+
+</script>
+</body>
+</html>
